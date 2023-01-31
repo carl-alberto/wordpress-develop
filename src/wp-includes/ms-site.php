@@ -801,7 +801,8 @@ function wp_uninitialize_site( $site_id ) {
 
 	$uploads = wp_get_upload_dir();
 
-	$tables = $wpdb->tables( 'blog' );
+	$prep_query = $wpdb->prepare( 'SELECT table_name FROM information_schema.TABLES WHERE table_name LIKE %s;', $wpdb->esc_like( "{$wpdb->base_prefix}{$blog_id}_" ) . '%' );
+	$tables = $wpdb->get_results( $prep_query, ARRAY_A );
 
 	/**
 	 * Filters the tables to drop when the site is deleted.
@@ -826,44 +827,13 @@ function wp_uninitialize_site( $site_id ) {
 	 * @param int    $site_id The site ID.
 	 */
 	$dir     = apply_filters( 'wpmu_delete_blog_upload_dir', $uploads['basedir'], $site->id );
-	$dir     = rtrim( $dir, DIRECTORY_SEPARATOR );
-	$top_dir = $dir;
-	$stack   = array( $dir );
-	$index   = 0;
 
-	while ( $index < count( $stack ) ) {
-		// Get indexed directory from stack.
-		$dir = $stack[ $index ];
+	require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+	require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
 
-		// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged
-		$dh = @opendir( $dir );
-		if ( $dh ) {
-			$file = @readdir( $dh );
-			while ( false !== $file ) {
-				if ( '.' === $file || '..' === $file ) {
-					$file = @readdir( $dh );
-					continue;
-				}
+	$fileSystemDirect = new WP_Filesystem_Direct( false );
 
-				if ( @is_dir( $dir . DIRECTORY_SEPARATOR . $file ) ) {
-					$stack[] = $dir . DIRECTORY_SEPARATOR . $file;
-				} elseif ( @is_file( $dir . DIRECTORY_SEPARATOR . $file ) ) {
-					@unlink( $dir . DIRECTORY_SEPARATOR . $file );
-				}
-
-				$file = @readdir( $dh );
-			}
-			@closedir( $dh );
-		}
-		$index++;
-	}
-
-	$stack = array_reverse( $stack ); // Last added directories are deepest.
-	foreach ( (array) $stack as $dir ) {
-		if ( $dir != $top_dir ) {
-			@rmdir( $dir );
-		}
-	}
+	$fileSystemDirect->rmdir( $dir, true );
 
 	// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
 	if ( $switch ) {
