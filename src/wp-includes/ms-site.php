@@ -760,7 +760,7 @@ function wp_initialize_site( $site_id, array $args = array() ) {
  *
  * @global wpdb $wpdb WordPress database abstraction object.
  *
- * @param int|WP_Site $site_id Site ID or object.
+ * @param object|WP_Site $site_id Site ID or object.
  * @return true|WP_Error True on success, or error object on failure.
  */
 function wp_uninitialize_site( $site_id ) {
@@ -815,7 +815,9 @@ function wp_uninitialize_site( $site_id ) {
 	$drop_tables = apply_filters( 'wpmu_drop_tables', $tables, $site->id );
 
 	foreach ( (array) $drop_tables as $table ) {
-		$wpdb->query( "DROP TABLE IF EXISTS `$table`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$table_name = $table['table_name'];
+
+		$wpdb->query( "DROP TABLE IF EXISTS `$table_name`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/**
