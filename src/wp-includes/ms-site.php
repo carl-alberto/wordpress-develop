@@ -807,8 +807,8 @@ function wp_uninitialize_site( $site_id ) {
 	 *
 	 * @since MU (3.0.0)
 	 *
-	 * @param string[] $tables  Array of names of the site tables to be dropped.
-	 * @param int      $site_id The ID of the site to drop tables for.
+	 * @param string[] $drop_tables Array of names of the site tables to be dropped.
+	 * @param onject   $site        Contains the objects related to the subsite like the multisite site id that will be used to reference the drop tables for.
 	 */
 	$drop_tables = apply_filters( 'wpmu_drop_tables', $tables, $site->id );
 
@@ -823,8 +823,8 @@ function wp_uninitialize_site( $site_id ) {
 	 *
 	 * @since MU (3.0.0)
 	 *
-	 * @param string $basedir Uploads path without subdirectory. @see wp_upload_dir()
-	 * @param int    $site_id The site ID.
+	 * @param object $uploads Uploads path object. @see wp_upload_dir()
+	 * @param string $dir Filtered actual subsite directory path to be deleted.
 	 */
 	$uploads = wp_get_upload_dir();
 	$dir     = apply_filters( 'wpmu_delete_blog_upload_dir', $uploads['basedir'], $site->id );
