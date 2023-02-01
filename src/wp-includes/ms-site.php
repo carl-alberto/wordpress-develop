@@ -799,7 +799,7 @@ function wp_uninitialize_site( $site_id ) {
 		switch_to_blog( $site->id );
 	}
 
-	$uploads = wp_get_upload_dir();
+	$blog_id = intval( $site_id->blog_id );
 
 	$prep_query = $wpdb->prepare( 'SELECT table_name FROM information_schema.TABLES WHERE table_name LIKE %s;', $wpdb->esc_like( "{$wpdb->base_prefix}{$blog_id}_" ) . '%' );
 	$tables = $wpdb->get_results( $prep_query, ARRAY_A );
@@ -826,6 +826,7 @@ function wp_uninitialize_site( $site_id ) {
 	 * @param string $basedir Uploads path without subdirectory. @see wp_upload_dir()
 	 * @param int    $site_id The site ID.
 	 */
+	$uploads = wp_get_upload_dir();
 	$dir     = apply_filters( 'wpmu_delete_blog_upload_dir', $uploads['basedir'], $site->id );
 
 	require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
