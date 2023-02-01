@@ -799,10 +799,8 @@ function wp_uninitialize_site( $site_id ) {
 		switch_to_blog( $site->id );
 	}
 
-	$blog_id = intval( $site_id->blog_id );
-
-	$prep_query = $wpdb->prepare( 'SELECT table_name FROM information_schema.TABLES WHERE table_name LIKE %s;', $wpdb->esc_like( "{$wpdb->base_prefix}{$blog_id}_" ) . '%' );
-	$tables = $wpdb->get_results( $prep_query, ARRAY_A );
+	$prep_query = $wpdb->prepare( 'SELECT table_name FROM information_schema.TABLES WHERE table_name LIKE %s;', $wpdb->esc_like( "{$wpdb->base_prefix}{$site->id}_" ) . '%' );
+	$tables     = $wpdb->get_results( $prep_query, ARRAY_A );
 
 	/**
 	 * Filters the tables to drop when the site is deleted.
