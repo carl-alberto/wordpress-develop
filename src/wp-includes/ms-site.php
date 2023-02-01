@@ -823,18 +823,48 @@ function wp_uninitialize_site( $site_id ) {
 	 *
 	 * @since MU (3.0.0)
 	 *
-	 * @param object $uploads Uploads path object. @see wp_upload_dir()
-	 * @param string $dir Filtered actual subsite directory path to be deleted.
+	 * @param string $basedir Uploads path without subdirectory. @see wp_upload_dir()
+	 * @param int    $site_id The site ID.
 	 */
-	$uploads = wp_get_upload_dir();
 	$dir     = apply_filters( 'wpmu_delete_blog_upload_dir', $uploads['basedir'], $site->id );
+	$dir     = rtrim( $dir, DIRECTORY_SEPARATOR );
+	$top_dir = $dir;
+	$stack   = array( $dir );
+	$index   = 0;
 
-	require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
-	require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+	while ( $index < count( $stack ) ) {
+		// Get indexed directory from stack.
+		$dir = $stack[ $index ];
 
-	$fileSystemDirect = new WP_Filesystem_Direct( false );
+		// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged
+		$dh = @opendir( $dir );
+		if ( $dh ) {
+			$file = @readdir( $dh );
+			while ( false !== $file ) {
+				if ( '.' === $file || '..' === $file ) {
+					$file = @readdir( $dh );
+					continue;
+				}
 
-	$fileSystemDirect->rmdir( $dir, true );
+				if ( @is_dir( $dir . DIRECTORY_SEPARATOR . $file ) ) {
+					$stack[] = $dir . DIRECTORY_SEPARATOR . $file;
+				} elseif ( @is_file( $dir . DIRECTORY_SEPARATOR . $file ) ) {
+					@unlink( $dir . DIRECTORY_SEPARATOR . $file );
+				}
+
+				$file = @readdir( $dh );
+			}
+			@closedir( $dh );
+		}
+		$index++;
+	}
+
+	$stack = array_reverse( $stack ); // Last added directories are deepest.
+	foreach ( (array) $stack as $dir ) {
+		if ( $dir != $top_dir ) {
+			@rmdir( $dir );
+		}
+	}
 
 	// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
 	if ( $switch ) {
