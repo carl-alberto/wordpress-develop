@@ -286,16 +286,16 @@ if ( is_multisite() ) :
 			$blog_id = self::factory()->blog->create();
 
 			// Delete the site and force a table drop.
-			wpmu_delete_blog( $blog_id, true );
+			$tes = wp_uninitialize_site( $blog_id );
 
 			$prefix = $wpdb->get_blog_prefix( $blog_id );
 			foreach ( $wpdb->tables( 'blog', false ) as $table ) {
 				$suppress = $wpdb->suppress_errors();
 
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$table_fields = $wpdb->get_results( "DESCRIBE $prefix$table;" );
-
+				$table_fields = $wpdb->get_results( "DESCRIBE $prefix . $table;" );
 				$wpdb->suppress_errors( $suppress );
+
 				$this->assertEmpty( $table_fields );
 			}
 		}
