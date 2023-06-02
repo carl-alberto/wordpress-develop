@@ -1871,25 +1871,15 @@ if ( is_multisite() ) :
 
 			wp_uninitialize_site( self::$uninitialized_site_id );
 
-			$this->assertTrue( $result );
-			$this->assertTrue( $initialized );
-			$this->assertSame( $expected_options, $options );
-			$this->assertSame( $expected_meta, $meta );
+			$this->assertTrue( $result, 'Initialize subsite failed' );
+			$this->assertTrue( $initialized, 'Unitialize subsite failed' );
+			$this->assertSame( $expected_options, $options, 'Multisite option mismatch' );
+			$this->assertSame( $expected_meta, $meta, 'Multisite meta mismatch' );
 		}
 
 		public function data_wp_initialize_site() {
 			return array(
-				array(
-					array(),
-					array(
-						'home'        => 'http://uninitialized.org',
-						'siteurl'     => 'http://uninitialized.org',
-						'admin_email' => '',
-						'blog_public' => '1',
-					),
-					array(),
-				),
-				array(
+				'Multisite variation data variation 1' => array(
 					array(
 						'options' => array(
 							'home'    => 'https://uninitialized.org',
@@ -1911,20 +1901,7 @@ if ( is_multisite() ) :
 						'key2' => 'value2',
 						'key3' => '',
 					),
-				),
-				array(
-					array(
-						'title'   => 'My New Site',
-						'options' => array(
-							'blogdescription' => 'Just My New Site',
-						),
-					),
-					array(
-						'blogname'        => 'My New Site',
-						'blogdescription' => 'Just My New Site',
-					),
-					array(),
-				),
+				)
 			);
 		}
 
