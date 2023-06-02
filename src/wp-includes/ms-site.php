@@ -847,10 +847,6 @@ function wp_uninitialize_site( $site_id ) {
 	 */
 	$uploads = wp_get_upload_dir();
 	$dir     = apply_filters( 'wpmu_delete_blog_upload_dir', $uploads['basedir'], $site->id );
-	$dir     = rtrim( $dir, DIRECTORY_SEPARATOR );
-	$top_dir = $dir;
-	$stack   = array( $dir );
-	$index   = 0;
 
 	require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
 	require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
