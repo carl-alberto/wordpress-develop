@@ -832,9 +832,12 @@ function wp_uninitialize_site( $site_id ) {
 	 */
 	$drop_tables = apply_filters( 'wpmu_drop_tables', $tables, $site->id );
 
-	foreach ( (array) $drop_tables as $table ) {
-		$table_name = $table['TABLE_NAME'];
-		$wpdb->query( "DROP TABLE IF EXISTS `$table_name`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	if ( ! empty($drop_tables ) ) {
+		foreach ( (array) $drop_tables as $table ) {
+			$table_name = $table['TABLE_NAME'];
+			// write_log( $table );
+			$wpdb->query( "DROP TABLE IF EXISTS `$table_name`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
 	}
 
 	/**
