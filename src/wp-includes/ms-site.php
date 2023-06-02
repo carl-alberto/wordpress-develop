@@ -834,9 +834,11 @@ function wp_uninitialize_site( $site_id ) {
 
 	if ( ! empty($drop_tables ) ) {
 		foreach ( (array) $drop_tables as $table ) {
-			$table_name = $table['TABLE_NAME'];
-			// write_log( $table );
-			$wpdb->query( "DROP TABLE IF EXISTS `$table_name`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			if( isset( $table['TABLE_NAME'] ) ) {
+				$table_name = $table['TABLE_NAME'];
+				// write_log( $table );
+				$wpdb->query( "DROP TABLE IF EXISTS `$table_name`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			}
 		}
 	}
 
