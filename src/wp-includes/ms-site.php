@@ -819,8 +819,10 @@ function wp_uninitialize_site( $site_id ) {
 		switch_to_blog( $site->id );
 	}
 
-	$prep_query = $wpdb->prepare( 'SELECT table_name FROM information_schema.TABLES WHERE table_name LIKE %s;', $wpdb->esc_like( "{$wpdb->base_prefix}{$site->id}_" ) . '%' );
-	$tables     = $wpdb->get_results( $prep_query, ARRAY_A );
+	// $prep_query = $wpdb->prepare( 'SELECT table_name FROM information_schema.TABLES WHERE table_name LIKE %s;', $wpdb->esc_like( "{$wpdb->base_prefix}{$site->id}_" ) . '%' );
+	// $tables     = $wpdb->get_results( $prep_query, ARRAY_A );
+
+	$tables = $wpdb->tables( 'blog' );
 
 	/**
 	 * Filters the tables to drop when the site is deleted.
@@ -832,15 +834,24 @@ function wp_uninitialize_site( $site_id ) {
 	 */
 	$drop_tables = apply_filters( 'wpmu_drop_tables', $tables, $site->id );
 
-	if ( ! empty( $drop_tables ) ) {
-		foreach ( (array) $drop_tables as $table ) {
-			if ( isset( $table['TABLE_NAME'] ) ) {
-				$table_name = $table['TABLE_NAME'];
-
-				$wpdb->query( "DROP TABLE IF EXISTS `$table_name`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			}
-		}
+	foreach ( (array) $drop_tables as $table ) {
+		$wpdb->query( "DROP TABLE IF EXISTS `$table`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
+
+//	var_dump( $drop_tables );
+	// if ( ! empty( $drop_tables ) ) {
+	// 	foreach ( (array) $drop_tables as $table ) {
+	// 		if ( isset( $table['TABLE_NAME'] ) ) {
+	// 			$table_name = $table['TABLE_NAME'];
+
+	// 			$result = $wpdb->query( "DROP TABLE IF EXISTS `$table_name`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	// 			if ( $wpdb->last_error !== '' ) {
+	// 				return new WP_Error( 'error_db_subsite_delete', __( 'Error deleting database entries for subsite' ) );
+	// 			}
+				
+	// 		}
+	// 	}
+	// }
 
 	/**
 	 * Filters the upload base directory to delete when the site is deleted.

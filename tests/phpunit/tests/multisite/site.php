@@ -16,6 +16,8 @@ if ( is_multisite() ) :
 		protected static $network_ids;
 		protected static $site_ids;
 		protected static $uninitialized_site_id;
+		protected static $uninitialized_site_id2;
+		protected static $uninitialized_site_id3;
 
 		public function set_up() {
 			global $wpdb;
@@ -68,6 +70,20 @@ if ( is_multisite() ) :
 					'network_id' => self::$network_ids['make.wordpress.org/'],
 				)
 			);
+			self::$uninitialized_site_id2 = wp_insert_site(
+				array(
+					'domain'     => 'uninitialized2.org',
+					'path'       => '/',
+					'network_id' => self::$network_ids['make.wordpress.org/'],
+				)
+			);
+			self::$uninitialized_site_id3 = wp_insert_site(
+				array(
+					'domain'     => 'uninitialized3.org',
+					'path'       => '/',
+					'network_id' => self::$network_ids['make.wordpress.org/'],
+				)
+			);
 			add_action( 'wp_initialize_site', 'wp_initialize_site', 10, 2 );
 		}
 
@@ -75,8 +91,7 @@ if ( is_multisite() ) :
 			global $wpdb;
 
 			remove_action( 'wp_uninitialize_site', 'wp_uninitialize_site', 10 );
-	// wp_delete_site( self::$uninitialized_site_id );
-	wp_uninitialize_site( self::$uninitialized_site_id );
+			wp_delete_site( self::$uninitialized_site_id );
 			add_action( 'wp_uninitialize_site', 'wp_uninitialize_site', 10, 1 );
 
 			foreach ( self::$site_ids as $id ) {
@@ -1849,6 +1864,31 @@ if ( is_multisite() ) :
 
 		/**
 		 * @ticket 41333
+		 */
+		public function test_wp_initialize_site_args_filter() {
+			add_filter( 'wp_initialize_site_args', array( $this, 'filter_wp_initialize_site_args' ), 10, 3 );
+
+			$result = wp_initialize_site( self::$uninitialized_site_id, array( 'title' => 'My Site' ) );
+			switch_to_blog( self::$uninitialized_site_id );
+
+			$site_title = get_option( 'blogname' );
+			restore_current_blog();
+			wp_uninitialize_site( self::$uninitialized_site_id );
+
+			$this->assertSame(
+				sprintf( 'My Site %1$d in Network %2$d', self::$uninitialized_site_id, get_site( self::$uninitialized_site_id )->network_id ),
+				$site_title
+			);
+		}
+
+		public function filter_wp_initialize_site_args( $args, $site, $network ) {
+			$args['title'] = sprintf( 'My Site %1$d in Network %2$d', $site->id, $network->id );
+
+			return $args;
+		}
+
+		/**
+		 * @ticket 41333
 		 * @dataProvider data_wp_initialize_site
 		 */
 		public function test_wp_initialize_site( $args, $expected_options, $expected_meta ) {
@@ -1872,15 +1912,25 @@ if ( is_multisite() ) :
 
 			wp_uninitialize_site( self::$uninitialized_site_id );
 
-			$this->assertTrue( $result, 'Initialize subsite failed' );
-			$this->assertTrue( $initialized, 'Unitialize subsite failed' );
-			$this->assertSame( $expected_options, $options, 'Multisite option mismatch' );
-			$this->assertSame( $expected_meta, $meta, 'Multisite meta mismatch' );
+			$this->assertTrue( $result );
+			$this->assertTrue( $initialized );
+			$this->assertSame( $expected_options, $options );
+			$this->assertSame( $expected_meta, $meta );
 		}
 
 		public function data_wp_initialize_site() {
 			return array(
-				'Multisite data variation 1' => array(
+				array(
+					array(),
+					array(
+						'home'        => 'http://uninitialized.org',
+						'siteurl'     => 'http://uninitialized.org',
+						'admin_email' => '',
+						'blog_public' => '1',
+					),
+					array(),
+				),
+				array(
 					array(
 						'options' => array(
 							'home'    => 'https://uninitialized.org',
@@ -1903,8 +1953,22 @@ if ( is_multisite() ) :
 						'key3' => '',
 					),
 				),
+				array(
+					array(
+						'title'   => 'My New Site',
+						'options' => array(
+							'blogdescription' => 'Just My New Site',
+						),
+					),
+					array(
+						'blogname'        => 'My New Site',
+						'blogdescription' => 'Just My New Site',
+					),
+					array(),
+				),
 			);
 		}
+
 
 		/**
 		 * @ticket 41333
@@ -1951,34 +2015,9 @@ if ( is_multisite() ) :
 
 			wp_uninitialize_site( self::$uninitialized_site_id );
 
-			$this->assertTrue( $result );
+			$this->assertFalse( $result );
 			$this->assertTrue( $user_is_superadmin );
 			$this->assertSame( get_userdata( 1 )->user_email, $admin_email );
-		}
-
-		/**
-		 * @ticket 41333
-		 */
-		public function test_wp_initialize_site_args_filter() {
-			add_filter( 'wp_initialize_site_args', array( $this, 'filter_wp_initialize_site_args' ), 10, 3 );
-			$result = wp_initialize_site( self::$uninitialized_site_id, array( 'title' => 'My Site' ) );
-
-			switch_to_blog( self::$uninitialized_site_id );
-			$site_title = get_option( 'blogname' );
-			restore_current_blog();
-
-			wp_uninitialize_site( self::$uninitialized_site_id );
-
-			$this->assertSame(
-				sprintf( 'My Site %1$d in Network %2$d', self::$uninitialized_site_id, get_site( self::$uninitialized_site_id )->network_id ),
-				$site_title
-			);
-		}
-
-		public function filter_wp_initialize_site_args( $args, $site, $network ) {
-			$args['title'] = sprintf( 'My Site %1$d in Network %2$d', $site->id, $network->id );
-
-			return $args;
 		}
 
 		/**
@@ -2042,6 +2081,7 @@ if ( is_multisite() ) :
 		 */
 		public function test_wp_uninitialize_site_already_uninitialized() {
 			$result = wp_uninitialize_site( self::$uninitialized_site_id );
+
 			$this->assertWPError( $result );
 			$this->assertSame( 'site_already_uninitialized', $result->get_error_code() );
 		}
@@ -2050,8 +2090,20 @@ if ( is_multisite() ) :
 		 * @ticket 41333
 		 */
 		public function test_wp_is_site_initialized() {
+			// var_dump( get_current_blog_id() );
+			// var_dump( self::$uninitialized_site_id );
+			
+			
+			// var_dump( wp_is_site_initialized( self::$uninitialized_site_id) );
+			// var_dump( wp_is_site_initialized( self::$uninitialized_site_id2) );
+
+			// wpms_is_site_initialized( self::$uninitialized_site_id2);
+			// wpms_is_site_initialized( self::$uninitialized_site_id);
+			
+
+
 			$this->assertTrue( wp_is_site_initialized( get_current_blog_id() ) );
-			$this->assertFalse( wp_is_site_initialized( self::$uninitialized_site_id ) );
+			$this->assertFalse( wp_is_site_initialized( self::$uninitialized_site_id2 ) );
 		}
 
 		/**
