@@ -1879,7 +1879,7 @@ if ( is_multisite() ) :
 
 		public function data_wp_initialize_site() {
 			return array(
-				'Multisite variation data variation 1' => array(
+				'Multisite data variation 1' => array(
 					array(
 						'options' => array(
 							'home'    => 'https://uninitialized.org',
@@ -1901,7 +1901,7 @@ if ( is_multisite() ) :
 						'key2' => 'value2',
 						'key3' => '',
 					),
-				)
+				),
 			);
 		}
 
@@ -1911,14 +1911,18 @@ if ( is_multisite() ) :
 		public function test_wp_initialize_site_user_roles() {
 			global $wpdb;
 
-			$result = wp_initialize_site( self::$uninitialized_site_id, array() );
+			$initialized = wp_is_site_initialized( self::$uninitialized_site_id );
+
+			if ( ! $initialized ) {
+				$result = wp_initialize_site( self::$uninitialized_site_id, array() );
+			}
 
 			switch_to_blog( self::$uninitialized_site_id );
 			$table_prefix = $wpdb->get_blog_prefix( self::$uninitialized_site_id );
-			$roles        = get_option( $table_prefix . 'user_roles' );
-			restore_current_blog();
 
-			wp_uninitialize_site( self::$uninitialized_site_id );
+			restore_current_blog();
+			$site_roles = get_option( $wpdb->prefix . 'user_roles'  );
+			$result = wp_uninitialize_site( self::$uninitialized_site_id );
 
 			$this->assertTrue( $result );
 			$this->assertSameSets(
@@ -1928,8 +1932,9 @@ if ( is_multisite() ) :
 					'author',
 					'contributor',
 					'subscriber',
+					'uploader',
 				),
-				array_keys( $roles )
+				array_keys( $site_roles )
 			);
 		}
 
