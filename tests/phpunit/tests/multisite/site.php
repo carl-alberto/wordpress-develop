@@ -75,7 +75,8 @@ if ( is_multisite() ) :
 			global $wpdb;
 
 			remove_action( 'wp_uninitialize_site', 'wp_uninitialize_site', 10 );
-			wp_delete_site( self::$uninitialized_site_id );
+	// wp_delete_site( self::$uninitialized_site_id );
+	wp_uninitialize_site( self::$uninitialized_site_id );
 			add_action( 'wp_uninitialize_site', 'wp_uninitialize_site', 10, 1 );
 
 			foreach ( self::$site_ids as $id ) {
@@ -1922,7 +1923,7 @@ if ( is_multisite() ) :
 
 			restore_current_blog();
 			$site_roles = get_option( $wpdb->prefix . 'user_roles' );
-			$result = wp_uninitialize_site( self::$uninitialized_site_id );
+			$result     = wp_uninitialize_site( self::$uninitialized_site_id );
 
 			$this->assertTrue( $result );
 			$this->assertSameSets(
@@ -1939,27 +1940,19 @@ if ( is_multisite() ) :
 
 		/**
 		 * @ticket 41333
+		 * We want to test here if a user has super admin capabilities
 		 */
 		public function test_wp_initialize_site_user_is_admin() {
 
-			$initialized = wp_is_site_initialized( self::$uninitialized_site_id );
+			$result = wp_is_site_initialized( self::$uninitialized_site_id );
 
-			if ( ! $initialized ) {
-				$result = wp_initialize_site( self::$uninitialized_site_id, array( 'user_id' => 1 ) );
-			} else {
-				wp_uninitialize_site( self::$uninitialized_site_id );
-				$result = wp_initialize_site( self::$uninitialized_site_id, array( 'user_id' => 1 ) );
-			}
-
-			switch_to_blog( self::$uninitialized_site_id );
-			$user_is_admin = user_can( 1, 'manage_options' );
-			$admin_email   = get_option( 'admin_email' );
-			restore_current_blog();
+			$user_is_superadmin = user_can( 1, 'manage_network' );
+			$admin_email        = get_option( 'admin_email' );
 
 			wp_uninitialize_site( self::$uninitialized_site_id );
 
-			// $this->assertTrue( $result );
-			$this->assertTrue( $user_is_admin );
+			$this->assertTrue( $result );
+			$this->assertTrue( $user_is_superadmin );
 			$this->assertSame( get_userdata( 1 )->user_email, $admin_email );
 		}
 
